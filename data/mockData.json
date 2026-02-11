@@ -1,0 +1,19 @@
+{
+  "vaccinationStatus": {
+    "polio-1": true,
+    "polio-2": true,
+    "polio-3": false,
+    "bcg": true,
+    "measles": false
+  },
+  "upcoming": [
+    {
+      "vaccine": "Polio Drop (OPV-3)",
+      "date": "Nov 12, 2025"
+    },
+    {
+      "vaccine": "Measles (MR-1)",
+      "date": "Dec 25, 2025"
+    }
+  ]
+}
