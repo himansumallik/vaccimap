@@ -50,7 +50,6 @@ export default function App() {
         If not, start on Login.
       */}
       <Stack.Navigator 
-        initialRouteName={user ? 'Dashboard' : 'Login'}
         screenOptions={{
           headerStyle: { backgroundColor: '#0284c7' }, // Tailwind blue-600
           headerTintColor: '#fff',
@@ -59,14 +58,17 @@ export default function App() {
           },
         }}
       >
-        {/* These screens are now protected */}
-        <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'VacciMap Dashboard' }} />
-        <Stack.Screen name="CreateProfile" component={CreateProfileScreen} options={{ title: 'Create Profile' }} />
-        
-        {/* This is the public login screen */}
-        <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login / Register' }} />
+        {user ? (
+          <>
+            {/* These screens are now protected */}
+            <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'VacciMap Dashboard' }} />
+            <Stack.Screen name="CreateProfile" component={CreateProfileScreen} options={{ title: 'Create Profile' }} />
+          </>
+        ) : (
+          /* This is the public login screen */
+          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login / Register' }} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
