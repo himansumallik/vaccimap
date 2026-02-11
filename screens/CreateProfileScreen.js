@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../firebase';
-import { Button, HelperText, TextInput, Title, Text } from 'react-native-paper';
+import { Button, HelperText, TextInput, Title } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import MapView, { Marker } from 'react-native-maps';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
 export default function CreateProfileScreen({ navigation }) {
@@ -104,33 +105,126 @@ export default function CreateProfileScreen({ navigation }) {
     }
   };
 
+  // 5. Handle Back to Login (Logout)
+  const handleBackToLogin = async () => {
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       style={styles.mainContainer}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Title style={styles.headerTitle}>Complete Your Profile</Title>
-        
-        {/* Parent & Child Names */}
-        <TextInput label="Parent Name" value={parentName} onChangeText={setParentName} style={styles.input} mode="outlined" />
-        <TextInput label="Child Name" value={childName} onChangeText={setChildName} style={styles.input} mode="outlined" />
+        {/* Back Button */}
+        <TouchableOpacity onPress={handleBackToLogin} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          <Text style={styles.backButtonText}>Back to Login</Text>
+        </TouchableOpacity>
+
+        {/* Header Section */}
+        <View style={styles.headerContainer}>
+          <View style={styles.iconCircle}>
+            <MaterialCommunityIcons name="account-circle" size={60} color="#fff" />
+          </View>
+          <Title style={styles.headerTitle}>Complete Your Profile</Title>
+          <Text style={styles.tagline}>Tell us about your family</Text>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          {/* Parent & Child Names */}
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="account-outline" size={24} color="#0284c7" style={styles.inputIcon} />
+            <TextInput
+              label="Parent Name"
+              value={parentName}
+              onChangeText={setParentName}
+              style={styles.input}
+              mode="outlined"
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="baby" size={24} color="#0284c7" style={styles.inputIcon} />
+            <TextInput
+              label="Child Name"
+              value={childName}
+              onChangeText={setChildName}
+              style={styles.input}
+              mode="outlined"
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
 
         {/* Date of Birth Picker */}
         <TouchableOpacity onPress={() => setShowDatePicker(true)}>
           <View pointerEvents="none">
-            <TextInput 
-              label="Child Date of Birth" 
-              value={childDOB} 
+            <TextInput
+              label="Child Date of Birth"
+              value={childDOB}
               placeholder="Select Date"
-              style={styles.input} 
+              style={styles.input}
               mode="outlined"
+              placeholderTextColor="#94a3b8"
               right={<TextInput.Icon icon="calendar" />}
             />
           </View>
         </TouchableOpacity>
 
-        {showDatePicker && (
+         {/* Geo-Location Capture */}
+          <Title style={styles.subTitle}>Home Location</Title>
+          <Text style={styles.infoText}>This location will be used to find your nearest vaccination center.</Text>
+
+          <Button
+            icon="crosshairs-gps"
+            mode="outlined"
+            onPress={getCurrentLocation}
+            loading={fetchingLocation}
+            style={styles.locationButton}
+          >
+            {location ? "Location Captured" : "Capture Current Location"}
+          </Button>
+
+          {location && (
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.miniMap}
+                region={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+            >
+              <Marker coordinate={location} />
+            </MapView>
+            <Text style={styles.coordsText}>
+              Lat: {location.latitude.toFixed(5)} | Lng: {location.longitude.toFixed(5)}
+            </Text>
+            </View>
+          )}
+        </View>
+
+        {error ? <HelperText type="error" style={styles.errorText}>{error}</HelperText> : null}
+
+        <TouchableOpacity
+          onPress={handleSaveProfile} 
+          style={styles.saveButton} 
+          disabled={loading}
+        >
+          {loading ? <ActivityIndicator color="#fff" /> : (
+            <Text style={styles.saveButtonText}>Save Profile & Continue</Text>
+          )}
+        </TouchableOpacity>
+
+         {showDatePicker && (
           <DateTimePicker
             value={date}
             mode="date"
@@ -139,69 +233,78 @@ export default function CreateProfileScreen({ navigation }) {
             maximumDate={new Date()}
           />
         )}
-
-        {/* Geo-Location Capture */}
-        <Title style={styles.subTitle}>Home Location</Title>
-        <Text style={styles.infoText}>This location will be used to find your nearest vaccination center.</Text>
-        
-        <Button 
-          icon="crosshairs-gps" 
-          mode="outlined" 
-          onPress={getCurrentLocation}
-          loading={fetchingLocation}
-          style={styles.locationButton}
-        >
-          {location ? "Location Captured" : "Capture Current Location"}
-        </Button>
-
-        {location && (
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.miniMap}
-              region={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
-              }}
-              scrollEnabled={false}
-              zoomEnabled={false}
-            >
-              <Marker coordinate={location} />
-            </MapView>
-            <Text style={styles.coordsText}>
-              Lat: {location.latitude.toFixed(5)} | Lng: {location.longitude.toFixed(5)}
-            </Text>
-          </View>
-        )}
-
-        {error ? <HelperText type="error" style={styles.errorText}>{error}</HelperText> : null}
-        
-        <Button 
-          mode="contained" 
-          onPress={handleSaveProfile} 
-          style={styles.saveButton} 
-          loading={loading} 
-          disabled={loading}
-        >
-          Save Profile & Continue
-        </Button>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#f5f6fa' },
-  scrollContainer: { padding: 20, flexGrow: 1, justifyContent: 'center' },
-  headerTitle: { marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
-  subTitle: { marginTop: 15, fontSize: 18 },
-  infoText: { fontSize: 12, color: '#666', marginBottom: 10 },
-  input: { marginBottom: 12, backgroundColor: '#fff' },
-  locationButton: { marginBottom: 10, borderColor: '#273c75' },
-  mapContainer: { height: 180, marginVertical: 10, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#ddd' },
+  mainContainer: { flex: 1, backgroundColor: '#0284c7' },
+
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#e0f2fe',
+    marginTop: 5,
+  },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+  },
+  subTitle: { marginTop: 15, fontSize: 18, color: '#334155' },
+  infoText: { fontSize: 14, color: '#71717a', marginBottom: 10 },
+  inputContainer: { marginBottom: 15 },
+  input: { backgroundColor: '#f8fafc' },
+  locationButton: { marginBottom: 15, borderColor: '#0284c7' },
+  mapContainer: { height: 180, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#cbd5e0', marginBottom: 15, },
+
   miniMap: { width: '100%', height: '100%' },
-  coordsText: { textAlign: 'center', fontSize: 10, color: '#777', marginTop: 4 },
-  errorText: { marginBottom: 10, textAlign: 'center' },
-  saveButton: { marginTop: 20, paddingVertical: 8, backgroundColor: '#273c75' },
+  coordsText: { textAlign: 'center', fontSize: 12, color: '#475569', marginTop: 5 },
+  errorText: { marginBottom: 15, textAlign: 'center', color: '#dc2626' },
+  saveButton: { 
+    marginTop: 10, 
+    paddingVertical: 15, 
+    backgroundColor: '#0284c7', 
+    borderRadius: 12, 
+    alignItems: 'center' 
+  },
+  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 8,
+    fontWeight: '600',
+  },
 });

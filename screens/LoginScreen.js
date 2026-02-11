@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert, 
+  StyleSheet, 
+  KeyboardAvoidingView, 
+  Platform,
+  ScrollView 
+} from 'react-native';
 // This is the key component you found - the modal verifier
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { signInWithCredential, PhoneAuthProvider } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore'; 
 // Import our central firebase config
 import { auth, db, appId, firebaseConfig } from '../firebase';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // We pass in { navigation } from React Navigation
 export default function LoginScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationId, setVerificationId] = useState(null);
   const [otp, setOtp] = useState('');
-  const recaptchaVerifier = React.useRef(null);
+  const recaptchaVerifier = useRef(null);
 
   // Step 1: Send OTP
   const sendVerification = async () => {
@@ -71,45 +82,88 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  // Helper to reset state if user wants to change number
+  const changeNumber = () => {
+    setVerificationId(null);
+    setOtp('');
+  };
+
   return (
-    <View style={styles.container}>
-      {/* reCAPTCHA Modal */}
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={firebaseConfig} // Use config from firebase.js
-      />
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        {/* reCAPTCHA Modal */}
+        <FirebaseRecaptchaVerifierModal
+          ref={recaptchaVerifier}
+          firebaseConfig={firebaseConfig} // Use config from firebase.js
+        />
 
-      <Text style={styles.title}>VacciMap Login</Text>
+        {/* Header Section */}
+        <View style={styles.headerContainer}>
+          <View style={styles.iconCircle}>
+            <MaterialCommunityIcons name="shield-check" size={60} color="#fff" />
+          </View>
+          <Text style={styles.appName}>VacciMap</Text>
+          <Text style={styles.tagline}>Secure Vaccination Tracking</Text>
+        </View>
 
-      {!verificationId ? (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="+91 9876543210"
-            keyboardType="phone-pad"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-          <TouchableOpacity style={styles.button} onPress={sendVerification}>
-            <Text style={styles.buttonText}>Send OTP</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter OTP"
-            keyboardType="number-pad"
-            value={otp}
-            onChangeText={setOtp}
-            maxLength={6}
-          />
-          <TouchableOpacity style={styles.button} onPress={confirmCode}>
-            <Text style={styles.buttonText}>Verify OTP</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+        {/* Form Card */}
+        <View style={styles.card}>
+          {!verificationId ? (
+            <>
+              <Text style={styles.stepTitle}>Welcome Back</Text>
+              <Text style={styles.stepSubtitle}>Enter your mobile number to continue</Text>
+              
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="phone" size={24} color="#0284c7" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="+91 9876543210"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="phone-pad"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  autoComplete="tel"
+                />
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={sendVerification}>
+                <Text style={styles.buttonText}>Send OTP</Text>
+                <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.stepTitle}>Verify OTP</Text>
+              <Text style={styles.stepSubtitle}>Enter the code sent to {phoneNumber}</Text>
+
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="lock-outline" size={24} color="#0284c7" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="123456"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="number-pad"
+                  value={otp}
+                  onChangeText={setOtp}
+                  maxLength={6}
+                />
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={confirmCode}>
+                <Text style={styles.buttonText}>Verify & Login</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={changeNumber} style={styles.textButton}>
+                <Text style={styles.textButtonLabel}>Change Phone Number</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -117,37 +171,102 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0284c7', // Brand Blue Background
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f6fa',
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  appName: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#e0f2fe',
+    marginTop: 5,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  stepTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  stepSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
     marginBottom: 20,
-    color: '#2f3640',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 10,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    width: '90%',
-    borderWidth: 1,
-    borderColor: '#dcdde1',
-    borderRadius: 10,
+    flex: 1,
     padding: 12,
-    marginBottom: 20,
     fontSize: 16,
-    backgroundColor: '#fff',
+    color: '#334155',
   },
   button: {
-    width: '90%',
-    backgroundColor: '#273c75',
+    backgroundColor: '#0284c7',
+    flexDirection: 'row',
+    justifyContent: 'center',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
+    marginTop: 10,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  textButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  textButtonLabel: {
+    color: '#64748b',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
