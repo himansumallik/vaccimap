@@ -42,11 +42,9 @@ export default function LoginScreen({ navigation }) {
 
       const credential = PhoneAuthProvider.credential(verificationId, otp);
       // Sign in the user
-      await signInWithCredential(auth, credential);
       const userCredential = await signInWithCredential(auth, credential);
       
       // --- NAVIGATION LOGIC ADDED ---
-      const user = auth.currentUser;
       const user = userCredential.user;
       if (!user) {
         throw new Error("User not found after sign in!");
@@ -153,4 +151,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

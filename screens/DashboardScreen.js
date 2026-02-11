@@ -61,7 +61,9 @@ export default function DashboardScreen({ navigation }) {
             setUser(docSnap.data());
           } else {
             console.error("No profile data found!");
-            navigation.replace('Login');
+            // User is logged in but has no profile. 
+            // Redirect to CreateProfile so they can finish setup.
+            navigation.replace('CreateProfile');
           }
         }
       } catch (error) {
@@ -188,4 +190,3 @@ const styles = StyleSheet.create({
     height: 250,
   }
 });
-
